@@ -15,7 +15,7 @@ source("winter-run/wr-fitness.R")
 source("winter-run/wr-update-params.R")
 
 params <- DSMCalibrationData::set_synth_years(winterRunDSM::params)
-params$prey_density <- rep("max", 31)
+params$prey_density <- rep("hi", 31)
 
 
 wr_lo_bounds <- rep(-10, 11)
@@ -27,7 +27,7 @@ wr_hi_bounds <- rep(15, 11)
 res <- ga(type = "real-valued",
           fitness =
             function(x) -winter_run_fitness(
-           known_adults = DSMCalibrationData::grandtab_observed$winter,
+              known_adults = DSMCalibrationData::grandtab_observed$winter,
               seeds = DSMCalibrationData::grandtab_imputed$winter,
               params = params,
               x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10],
@@ -41,18 +41,19 @@ res <- ga(type = "real-valued",
           parallel = TRUE,
           pmutation = .4)
 
-readr::write_rds(res, paste0("winter-run/result-", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".rds"))
+readr::write_rds(res, paste0("winter-run/result-hi-", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".rds"))
 
 # Evaluate Results ------------------------------------
 r1_solution <- res@solution[1, ]
-keep <- c(1)
+keep <- c(1, 3)
 
 new_params <- update_params(x = r1_solution, winterRunDSM::params)
 calib_params <- DSMCalibrationData::set_synth_years(new_params)
+calib_params$prey_density <- rep("hi", 31)
 calib_sim <- winter_run_model(seeds = DSMCalibrationData::grandtab_imputed$winter, mode = "calibrate",
                            ..params = calib_params,
                            stochastic = FALSE,
-                           calib_return_all = TRUE)
+                           calib_return_all = T)
 
 
 nat_spawners <- as_tibble(calib_sim[keep, ,drop = F]) %>%
@@ -61,7 +62,7 @@ nat_spawners <- as_tibble(calib_sim[keep, ,drop = F]) %>%
   mutate(type = "simulated",
          year = readr::parse_number(year) + 2002)
 
-observed <- as_tibble((1 - .38) * DSMCalibrationData::grandtab_observed$winter[keep, , drop = FALSE]) %>%
+observed <- as_tibble((1 - winterRunDSM::params$proportion_hatchery[c(1, 3)]) * DSMCalibrationData::grandtab_observed$winter[keep, , drop = FALSE]) %>%
   mutate(watershed = DSMscenario::watershed_labels[keep]) %>%
   gather(year, spawners, -watershed) %>%
   mutate(type = "observed", year = as.numeric(year)) %>%
