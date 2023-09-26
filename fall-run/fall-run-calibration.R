@@ -1,3 +1,5 @@
+remotes::install_github("cvpia-osc/fallRunDSM@movement-hypothesis")
+
 library(fallRunDSM)
 library(GA)
 library(dplyr)
@@ -6,19 +8,23 @@ library(ggplot2)
 library(readr)
 
 source("fall-run/fall-run-fitness.R")
+# source("fall-run/fall-run-fitness-altern-routes.R")
 source("fall-run/fall-run-update-params.R")
 
-params <- DSMCalibrationData::set_synth_years(fallRunDSM::params)
+params <- DSMCalibrationData::set_synth_years(fallRunDSM::params_2022)
+params$prey_density <- rep("max", 31)
 # Perform calibration --------------------
 lo_bounds <- rep(-3.5, 40)
 lo_bounds[1] <- 2.5
 lo_bounds[20:22] <- 0
+# lo_bounds[41:42] <- 1
 
 hi_bounds <- rep(3.5, 40)
+# hi_bounds[41:42] <- 20
 
 res <- ga(type = "real-valued",
           fitness =
-            function(x) -fall_run_fitness(
+            function(x) -fall_run_fitness_routing(
               known_adults = DSMCalibrationData::grandtab_observed$fall,
               seeds = DSMCalibrationData::grandtab_imputed$fall,
               params = params,
@@ -36,13 +42,12 @@ res <- ga(type = "real-valued",
           parallel = TRUE,
           pmutation = .4)
 
-readr::write_rds(res, paste0("fall-run/fits/result-", Sys.Date(), ".rds"))
+readr::write_rds(res, paste0("fall-run/fits/result-multi-route", format(Sys.time(), "%Y-%m-%d_%H-%M"), ".rds"))
 
 # Evaluate Results ------------------------------------
-res <- read_rds("calibration/calibration-results-2022.rds")
 keep <- c(1,6,7,10,12,19,20,23,26:30)
 result_solution <- res@solution[1, ]
-result_params <- update_params(x = result_solution, fallRunDSM::params)
+result_params <- update_params(x = result_solution, fallRunDSM::params_multi_route)
 result_params <- DSMCalibrationData::set_synth_years(result_params)
 result_sim <- fall_run_model(seeds = DSMCalibrationData::grandtab_imputed$fall, mode = "calibrate",
                          ..params = result_params,

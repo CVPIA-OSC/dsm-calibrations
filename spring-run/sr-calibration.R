@@ -39,9 +39,9 @@ res <- ga(type = "real-valued",
                                                 # if you make a small tweak to the fitness function and want to re-run calibration you
                                                 # pass best previous solution to start from there and see if changes make a difference
 
-readr::write_rds(res, paste0("calibration/res-", Sys.time(), ".rds"))
+readr::write_rds(res, paste0("spring-run/result-max-prey-", format(Sys.time(), "%Y-%m-%d_%H-%M"), ".rds"))
 
-res <- readr::read_rds("calibration/calibration-results-2023.rds")
+# res <- readr::read_rds("calibration/calibration-results-2023.rds")
 
 # Evaluate Results ------------------------------------
 
@@ -50,6 +50,7 @@ r1_solution <- res@solution[1, ]
 
 r1_params <- update_params(x = r1_solution, springRunDSM::params)
 r1_params <- DSMCalibrationData::set_synth_years(r1_params)
+r1_params$prey_density <- rep("max", 31)
 r1_sim <- spring_run_model(seeds = DSMCalibrationData::grandtab_imputed$spring, mode = "calibrate",
                            ..params = r1_params,
                            stochastic = FALSE)
@@ -98,3 +99,4 @@ r1_eval_df %>%
   summarise(
     r = cor(observed, simulated, use = "pairwise.complete.obs")
   )
+
