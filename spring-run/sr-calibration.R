@@ -8,15 +8,15 @@ library(readr)
 source("spring-run/sr-fitness.R")
 source("spring-run/sr-update-params.R")
 
-params <- DSMCalibrationData::set_synth_years(springRunDSM::params)
+params <- DSMCalibrationData::set_synth_years(springRunDSM::params_2022)
 params$prey_density <- rep("max")
 best_previous_solution <- readr::read_rds("calibration/calibration-results-2023.rds")@solution
 
 
-lo_bounds <- rep(-5, 27)
+lo_bounds <- rep(-10, 27)
 lo_bounds[1] <- 2.5
 lo_bounds[13:15] <- 0
-hi_bounds <- rep(5, 27)
+hi_bounds <- rep(10, 27)
 # Perform calibration --------------------
 res <- ga(type = "real-valued",
           fitness =
@@ -39,16 +39,16 @@ res <- ga(type = "real-valued",
                                                 # if you make a small tweak to the fitness function and want to re-run calibration you
                                                 # pass best previous solution to start from there and see if changes make a difference
 
-readr::write_rds(res, paste0("spring-run/result-max-prey-", format(Sys.time(), "%Y-%m-%d_%H-%M"), ".rds"))
+readr::write_rds(res, paste0("spring-run/result-last-week-max-prey-1-", format(Sys.time(), "%Y-%m-%d_%H-%M"), ".rds"))
 
-# res <- readr::read_rds("calibration/calibration-results-2023.rds")
+# res <- readr::read_rds("winter-run/result-max-cor-556-2023-08-11_133255.rds")
 
 # Evaluate Results ------------------------------------
 
 keep <- c(2, 3, 6, 7, 10, 12, 19, 20)
 r1_solution <- res@solution[1, ]
 
-r1_params <- update_params(x = r1_solution, springRunDSM::params)
+r1_params <- update_params(x = r1_solution, springRunDSM::params_2022)
 r1_params <- DSMCalibrationData::set_synth_years(r1_params)
 r1_params$prey_density <- rep("max", 31)
 r1_sim <- spring_run_model(seeds = DSMCalibrationData::grandtab_imputed$spring, mode = "calibrate",
