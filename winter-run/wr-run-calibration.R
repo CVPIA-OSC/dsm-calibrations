@@ -14,8 +14,8 @@ library(readr)
 source("winter-run/wr-fitness.R")
 source("winter-run/wr-update-params.R")
 
-params <- DSMCalibrationData::set_synth_years(winterRunDSM::params)
-params$prey_density <- rep("hi", 31)
+params <- DSMCalibrationData::set_synth_years(winterRunDSM::params_2022)
+params$prey_density <- rep("max", 31)
 
 
 wr_lo_bounds <- rep(-10, 11)
@@ -41,15 +41,16 @@ res <- ga(type = "real-valued",
           parallel = TRUE,
           pmutation = .4)
 
-readr::write_rds(res, paste0("winter-run/result-hi-", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".rds"))
+readr::write_rds(res, paste0("winter-run/result-max-last-week", format(Sys.time(), "%Y-%m-%d_%H%M%S"), ".rds"))
 
 # Evaluate Results ------------------------------------
+res <- read_rds("winter-run/result-max-cor-556-2023-08-11_133255.rds")
 r1_solution <- res@solution[1, ]
 keep <- c(1, 3)
 
-new_params <- update_params(x = r1_solution, winterRunDSM::params)
+new_params <- update_params(x = r1_solution, winterRunDSM::params_2022)
 calib_params <- DSMCalibrationData::set_synth_years(new_params)
-calib_params$prey_density <- rep("hi", 31)
+calib_params$prey_density <- rep("max", 31)
 calib_sim <- winter_run_model(seeds = DSMCalibrationData::grandtab_imputed$winter, mode = "calibrate",
                            ..params = calib_params,
                            stochastic = FALSE,
